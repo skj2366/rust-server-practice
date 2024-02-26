@@ -1,4 +1,6 @@
+use std::env;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder, Result};
+use dotenv::dotenv;
 use serde::Serialize;
 
 mod api;
@@ -28,6 +30,7 @@ async fn not_found() -> Result<HttpResponse> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     let todo_db = repository::database::Database::new();
     let app_data = web::Data::new(todo_db);
 
@@ -39,7 +42,7 @@ async fn main() -> std::io::Result<()> {
             .default_service(web::route().to(not_found))
             .wrap(actix_web::middleware::Logger::default())
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind((env::var("SERVER_URL").unwrap(), env::var("SERVER_PORT").unwrap().parse().unwrap()))?
     .run()
     .await
 }
