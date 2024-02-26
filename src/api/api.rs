@@ -1,9 +1,10 @@
-use actix_web::web;
-use actix_web::{web::{
-    Data,
-    Json,
-}, get, post, put, delete, HttpResponse};
 use crate::{models::todo::Todo, repository::database::Database};
+use actix_web::web;
+use actix_web::{
+    delete, get, post, put,
+    web::{Data, Json},
+    HttpResponse,
+};
 
 #[post("/todos")]
 pub async fn create_todo(db: Data<Database>, new_todo: Json<Todo>) -> HttpResponse {
@@ -30,7 +31,11 @@ pub async fn get_todo_by_id(db: web::Data<Database>, id: web::Path<String>) -> H
 }
 
 #[put("/todos/{id}")]
-pub async fn update_todo_by_id(db: web::Data<Database>, id: web::Path<String>, updated_todo: web::Json<Todo>) -> HttpResponse {
+pub async fn update_todo_by_id(
+    db: web::Data<Database>,
+    id: web::Path<String>,
+    updated_todo: web::Json<Todo>,
+) -> HttpResponse {
     let todo = db.update_todo_by_id(&id, updated_todo.into_inner());
     match todo {
         Some(todo) => HttpResponse::Ok().json(todo),
@@ -54,7 +59,6 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .service(get_todos)
             .service(get_todo_by_id)
             .service(update_todo_by_id)
-            .service(delete_todo_by_id)
+            .service(delete_todo_by_id),
     );
 }
-

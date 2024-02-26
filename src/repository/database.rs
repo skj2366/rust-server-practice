@@ -1,5 +1,5 @@
-use std::fmt::Error;
 use chrono::prelude::*;
+use std::fmt::Error;
 use std::sync::{Arc, Mutex};
 
 use crate::models::todo::Todo;
@@ -21,7 +21,10 @@ impl Database {
 
     pub fn get_todo_by_id(&self, id: &str) -> Option<Todo> {
         let todos = self.todos.lock().unwrap();
-        todos.iter().find(|todo| todo.id == Some(id.to_string())).cloned()
+        todos
+            .iter()
+            .find(|todo| todo.id == Some(id.to_string()))
+            .cloned()
     }
 
     pub fn update_todo_by_id(&self, id: &str, todo: Todo) -> Option<Todo> {
@@ -32,14 +35,18 @@ impl Database {
             updated_at: Some(updated_at),
             ..todo
         };
-        let index = todos.iter().position(|todo| todo.id == Some(id.to_string()))?;
+        let index = todos
+            .iter()
+            .position(|todo| todo.id == Some(id.to_string()))?;
         todos[index] = todo.clone();
         Some(todo)
     }
 
     pub fn delete_todo_by_id(&self, id: &str) -> Option<Todo> {
         let mut todos = self.todos.lock().unwrap();
-        let index = todos.iter().position(|todo| todo.id == Some(id.to_string()))?;
+        let index = todos
+            .iter()
+            .position(|todo| todo.id == Some(id.to_string()))?;
         Some(todos.remove(index))
     }
 
