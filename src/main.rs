@@ -1,9 +1,11 @@
 use std::env;
+use actix_cors::Cors;
 
 // use actix_cors::Cors;
 use actix_web::{App, get, HttpResponse, HttpServer, Responder, Result, web};
 // use actix_web::http::header;
 use dotenv::dotenv;
+use reqwest::header;
 use serde::Serialize;
 use sqlx::mysql::MySqlPoolOptions;
 use sqlx::MySqlPool;
@@ -64,15 +66,15 @@ async fn main() -> std::io::Result<()> {
     println!("🚀 Server started successfully");
 
     HttpServer::new(move || {
-        // let cors = Cors::default()
-        //     // .allowed_origin("http://localhost:3000")
-        //     .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
-        //     .allowed_headers(vec![
-        //         header::CONTENT_TYPE,
-        //         header::AUTHORIZATION,
-        //         header::ACCEPT,
-        //     ])
-        //     .supports_credentials();
+        let cors = Cors::default()
+            // .allowed_origin("http://localhost:3000")
+            .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
+            .allowed_headers(vec![
+                header::CONTENT_TYPE,
+                header::AUTHORIZATION,
+                header::ACCEPT,
+            ])
+            .supports_credentials();
         App::new()
             // .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(AppState { db: pool.clone() }))
@@ -81,7 +83,7 @@ async fn main() -> std::io::Result<()> {
             .configure(handler::config)
             .service(healthcheck)
             .default_service(web::route().to(not_found))
-            // .wrap(cors)
+            .wrap(cors)
             .wrap(actix_web::middleware::Logger::default())
     })
     .bind((

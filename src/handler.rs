@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
+use chrono::{DateTime, Local};
 use serde_json::json;
-// use sqlx::__rt::yield_now;
 
 use crate::models::model::{TodoModel, TodoModelResponse};
 use crate::schema::CreateTodoSchema;
@@ -8,7 +8,7 @@ use crate::{schema::FilterOptions, AppState};
 
 #[get("/healthchecker")]
 async fn health_checker_handler() -> impl Responder {
-    const MESSAGE: &str = "Rust, SQLX, MySQL, Actix Web";
+    const MESSAGE: &str = "Rust, SQLX, MySQL, Actix Web handler.rs is Good🏃‍♂️";
 
     HttpResponse::Ok().json(json!({"status": "success","message": MESSAGE}))
 }
@@ -49,16 +49,15 @@ async fn create_todo_handler(
     body: web::Json<CreateTodoSchema>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    // let user_id = uuid::Uuid::new_v4().to_string();
     let query_result = sqlx::query(
-        r#"INSERT INTO todos (title,contents,is_completed,is_deleted) VALUES (?, ?, ?, ?)"#,
+        r#"INSERT INTO todos (title,contents,created_at,updated_at,is_completed,is_deleted) VALUES (?, ?, ?, ?, ?, ?)"#,
     )
     .bind(body.title.to_owned().unwrap_or_default())
     .bind(body.contents.to_owned().unwrap_or_default())
-    .bind(body.is_completed.to_owned().unwrap_or_default())
-    // .bind(body.is_completed.to_owned().unwrap_or(yield_now().to_string()))
-    .bind(body.is_deleted.to_owned().unwrap_or_default())
-    // .bind(body.is_deleted.to_owned().unwrap_or(yield_now().to_string()))
+    .bind(body.created_at.unwrap_or(DateTime::from(Local::now())))
+    .bind(body.updated_at.unwrap_or(DateTime::from(Local::now())))
+    .bind(body.is_completed.to_owned().unwrap_or("N".parse().unwrap()))
+    .bind(body.is_deleted.to_owned().unwrap_or(String::from("N")))
     .execute(&data.db)
     .await;
 
