@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
@@ -17,6 +18,12 @@ pub struct CreateTodoSchema {
     pub title: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub contents: Option<String>,
+    // #[serde(skip_serializing_if = "Option::DateTime<Utc>::now()")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<DateTime<Utc>>,
+    // #[serde(skip_serializing_if = "Option::DateTime<Utc>::now()")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<DateTime<Utc>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_completed: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

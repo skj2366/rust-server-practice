@@ -1,5 +1,6 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde_json::json;
+// use sqlx::__rt::yield_now;
 
 use crate::models::model::{TodoModel, TodoModelResponse};
 use crate::schema::CreateTodoSchema;
@@ -50,20 +51,16 @@ async fn create_todo_handler(
 ) -> impl Responder {
     // let user_id = uuid::Uuid::new_v4().to_string();
     let query_result = sqlx::query(
-        // r#"INSERT INTO todos (id,title,contents,is_completed,is_deleted) VALUES (?, ?, ?, ?, ?)"#,
         r#"INSERT INTO todos (title,contents,is_completed,is_deleted) VALUES (?, ?, ?, ?)"#,
     )
-    // .bind(user_id.clone())
     .bind(body.title.to_owned().unwrap_or_default())
     .bind(body.contents.to_owned().unwrap_or_default())
     .bind(body.is_completed.to_owned().unwrap_or_default())
+    // .bind(body.is_completed.to_owned().unwrap_or(yield_now().to_string()))
     .bind(body.is_deleted.to_owned().unwrap_or_default())
+    // .bind(body.is_deleted.to_owned().unwrap_or(yield_now().to_string()))
     .execute(&data.db)
     .await;
-    // .map_err(|err: sqlx::Error| err.to_string());
-
-    // println!("{:?}", query_result);
-    // println!("{:?}", query_result.clone().expect("REASON").last_insert_id());
 
     match query_result {
         Err(e) => HttpResponse::InternalServerError().json(json!({
@@ -81,50 +78,6 @@ async fn create_todo_handler(
             }))
         }
     }
-
-    // match query_result {
-    //     Ok(result) => {
-    //         HttpResponse::Ok().json(json!({
-    //             "status": "success",
-    //             "message": format!("{:?}", result)
-    //         }));
-    //     }
-    //     Err(e) => {
-    //         HttpResponse::InternalServerError()
-    //             .json(json!({"status": "error","message": format!("{:?}", e)}));
-    //     }
-    // }
-
-    // if let Err(err) = query_result {
-    //     if err.contains("Duplicate entry") {
-    //         return HttpResponse::BadRequest().json(
-    //             serde_json::json!({"status": "fail","message": "Todo with that title already exists"}),
-    //         );
-    //     }
-    //
-    //     return HttpResponse::InternalServerError()
-    //         .json(serde_json::json!({"status": "error","message": format!("{:?}", err)}));
-    // }
-    // return HttpResponse::Ok().json("todo_response");
-    // return HttpResponse::Ok().json("post ok");
-
-    // let query_result = sqlx::query_as!(TodoModel, r#"SELECT * FROM todos WHERE id = ?"#, user_id)
-    //     .fetch_one(&data.db)
-    //     .await;
-    //
-    // match query_result {
-    //     Ok(todo) => {
-    //         let todo_response = serde_json::json!({"status": "success","data": serde_json::json!({
-    //             "todo": filter_db_record(&todo)
-    //         })});
-    //
-    //         return HttpResponse::Ok().json(todo_response);
-    //     }
-    //     Err(e) => {
-    //         return HttpResponse::InternalServerError()
-    //             .json(serde_json::json!({"status": "error","message": format!("{:?}", e)}));
-    //     }
-    // }
 }
 fn filter_db_record(todo: &TodoModel) -> TodoModelResponse {
     TodoModelResponse {

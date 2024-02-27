@@ -1,8 +1,8 @@
 use std::env;
 
-use actix_cors::Cors;
+// use actix_cors::Cors;
 use actix_web::{App, get, HttpResponse, HttpServer, Responder, Result, web};
-use actix_web::http::header;
+// use actix_web::http::header;
 use dotenv::dotenv;
 use serde::Serialize;
 use sqlx::mysql::MySqlPoolOptions;
