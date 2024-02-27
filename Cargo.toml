@@ -14,6 +14,6 @@ dotenv = "0.15.0"
 reqwest = { version = "0.11.24", features = ["json"] }
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
-sqlx = { version = "0.7.3", features = ["mysql", "runtime-tokio-rustls", "macros"] }
+sqlx = { version = "0.7.3", features = ["mysql", "runtime-tokio-rustls", "macros", "runtime-async-std-native-tls", "chrono" ]}
 tokio = { version = "1.36.0", features = ["full"] }
 uuid = { version = "1.7.0", features = ["v4"] }
