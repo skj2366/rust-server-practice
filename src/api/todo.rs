@@ -2,13 +2,13 @@ use actix_web::{get, post, web, HttpResponse, Responder, patch, delete};
 use chrono::{DateTime, Local, Utc};
 use serde_json::json;
 
-use crate::models::model::{TodoModel, TodoModelResponse};
-use crate::schema::{CreateTodoSchema, UpdateTodoSchema};
-use crate::{schema::FilterOptions, AppState};
+use crate::models::todo::{TodoModel, TodoModelResponse};
+use crate::schemas::todo::{CreateTodoSchema, FilterOptions, UpdateTodoSchema};
+use crate::{AppState};
 
 #[get("/healthchecker")]
 async fn health_checker_handler() -> impl Responder {
-    const MESSAGE: &str = "Rust, SQLX, MySQL, Actix Web handler.rs is Good🏃‍♂️";
+    const MESSAGE: &str = "Rust, SQLX, MySQL, Actix Web todo is Good🏃‍♂️";
 
     HttpResponse::Ok().json(json!({"status": "success","message": MESSAGE}))
 }

@@ -9,10 +9,8 @@ use sqlx::mysql::MySqlPoolOptions;
 use sqlx::MySqlPool;
 
 mod api;
-mod handler;
 mod models;
-mod repository;
-mod schema;
+mod schemas;
 
 #[derive(Serialize)]
 pub struct Response {
@@ -42,8 +40,6 @@ async fn not_found() -> Result<HttpResponse> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    let todo_db = repository::database::Database::new();
-    let app_data = web::Data::new(todo_db);
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = match MySqlPoolOptions::new()
@@ -76,9 +72,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(AppState { db: pool.clone() }))
-            .app_data(app_data.clone())
-            .configure(api::api::config)
-            .configure(handler::config)
+            .configure(api::todo::config)
             .service(healthcheck)
             .default_service(web::route().to(not_found))
             .wrap(cors)
