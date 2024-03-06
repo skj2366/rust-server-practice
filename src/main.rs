@@ -2,6 +2,8 @@ use std::env;
 use actix_cors::Cors;
 use actix_web::{App, get, HttpResponse, HttpServer, Responder, Result, web};
 use actix_web::http::header;
+use chrono_tz::Asia::Seoul;
+use chrono_tz::Tz;
 use dotenv::dotenv;
 // use reqwest::header;
 use serde::Serialize;
@@ -11,6 +13,21 @@ use sqlx::MySqlPool;
 mod api;
 mod models;
 mod schemas;
+
+use chrono::{DateTime, Local, Utc};
+
+fn convert_timezone() {
+    let utc_time: DateTime<Utc> = Utc::now();
+    let local_time: DateTime<Local> = utc_time.with_timezone(&Local);
+
+    println!("UTC time: {}", utc_time);
+    println!("Local time: {}", local_time);
+}
+
+fn convert_timezone2() {
+    let seoul_now: DateTime<Tz> = Utc::now().with_timezone(&Seoul);
+    println!("seoul_now : {}", seoul_now);
+}
 
 #[derive(Serialize)]
 pub struct Response {
@@ -40,6 +57,8 @@ async fn not_found() -> Result<HttpResponse> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+    convert_timezone();
+    convert_timezone2();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = match MySqlPoolOptions::new()

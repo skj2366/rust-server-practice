@@ -4,7 +4,7 @@ use serde_json::json;
 
 use crate::models::todo::{TodoModel, TodoModelResponse};
 use crate::schemas::todo::{CreateTodoSchema, FilterOptions, UpdateTodoSchema};
-use crate::{AppState};
+use crate::AppState;
 
 #[get("/healthchecker")]
 async fn health_checker_handler() -> impl Responder {
@@ -195,6 +195,95 @@ async fn edit_todo_handler(
     }
 }
 
+#[patch("/toggle_complete/{id}")]
+async fn toggle_complete(
+    path: web::Path<String>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    let todo_id = path.into_inner().to_string();
+    let query_result = sqlx::query_as!(TodoModel, r#"SELECT * FROM todos WHERE id = ?"#, todo_id)
+        .fetch_one(&data.db)
+        .await;
+
+    let todo = match query_result {
+        Ok(todo) => todo,
+        Err(sqlx::Error::RowNotFound) => {
+            return HttpResponse::NotFound().json(
+                json!({"status": "fail","message": format!("todo with ID: {} not found", todo_id)}),
+            );
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError()
+                .json(json!({"status": "error","message": format!("{:?}", e)}));
+        }
+    };
+
+    let is_completed: Option<String> = todo.is_completed.clone();
+    let update_flag: String = match is_completed {
+        Some(str) => if str == "Y" {
+            String::from("N")
+        } else {
+            String::from("Y")
+        },
+        None => String::from("Y")
+    };
+    println!("{:?}", &update_flag);
+
+    let completed_at: Option<DateTime<Utc>> = if update_flag == "Y" {
+        Some(DateTime::from(Local::now()))
+    } else {
+        None
+    };
+
+    let update_result = sqlx::query(
+        r#"UPDATE todos SET updated_at = ?, is_completed = ?, completed_at = ? WHERE id = ?"#,
+    )
+        .bind::<DateTime<Utc>>(DateTime::from(Local::now()))
+        .bind(
+            &update_flag
+        )
+        .bind(
+            &completed_at
+        )
+        .bind(todo_id.to_owned())
+        .execute(&data.db)
+        .await;
+
+    match update_result {
+        Ok(result) => {
+            if result.rows_affected() == 0 {
+                let message = format!("todo with ID: {} not found", todo_id);
+                return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
+            }
+        }
+        Err(e) => {
+            let message = format!("Internal server error: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(json!({"status": "error","message": message}));
+        }
+    }
+
+    let updated_todo_result = sqlx::query_as!(
+        TodoModel,
+        r#"SELECT * FROM todos WHERE id = ?"#,
+        todo_id.to_owned()
+    )
+        .fetch_one(&data.db)
+        .await;
+
+    match updated_todo_result {
+        Ok(todo) => {
+            let todo_response = json!({"status": "success","data": json!({
+                "todo": filter_db_record(&todo)
+            })});
+
+            HttpResponse::Ok().json(todo_response)
+        }
+        Err(e) => HttpResponse::InternalServerError()
+            .json(json!({"status": "error","message": format!("{:?}", e)})),
+    }
+}
+
 #[delete("/todos/{id}")]
 async fn delete_todo_handler(
     path: web::Path<String>,
@@ -229,6 +318,10 @@ fn filter_db_record(todo: &TodoModel) -> TodoModelResponse {
         contents: todo.contents.to_owned().unwrap(),
         created_at: todo.created_at.unwrap(),
         updated_at: todo.updated_at.unwrap(),
+        completed_at: match &todo.completed_at {
+            Some(datetime) => Some(datetime.clone().into()),
+            None => None,
+        },
         is_completed: todo.is_completed.to_owned().unwrap(),
         is_deleted: todo.is_deleted.to_owned().unwrap(),
     }
@@ -241,7 +334,8 @@ pub fn config(conf: &mut web::ServiceConfig) {
         .service(create_todo_handler)
         .service(get_todo_handler)
         .service(edit_todo_handler)
-        .service(delete_todo_handler);
+        .service(delete_todo_handler)
+        .service(toggle_complete);
 
     conf.service(scope);
 }
