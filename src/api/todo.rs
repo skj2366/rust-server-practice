@@ -98,18 +98,18 @@ async fn get_todo_handler(
                 })
             });
 
-            return HttpResponse::Ok().json(todo_response);
+            HttpResponse::Ok().json(todo_response)
         }
         Err(sqlx::Error::RowNotFound) => {
-            return HttpResponse::NotFound().json(
+            HttpResponse::NotFound().json(
                 json!({"status": "fail","message": format!("todo with ID: {} not found", todo_id)}),
-            );
+            )
         }
         Err(e) => {
-            return HttpResponse::InternalServerError()
-                .json(json!({"status": "error","message": format!("{:?}", e)}));
+            HttpResponse::InternalServerError()
+                .json(json!({"status": "error","message": format!("{:?}", e)}))
         }
-    };
+    }
 }
 
 #[patch("/todos/{id}")]
@@ -313,17 +313,14 @@ async fn delete_todo_handler(
 
 fn filter_db_record(todo: &TodoModel) -> TodoModelResponse {
     TodoModelResponse {
-        id: todo.id.to_owned(),
-        title: todo.title.to_owned().unwrap(),
-        contents: todo.contents.to_owned().unwrap(),
-        created_at: todo.created_at.unwrap(),
-        updated_at: todo.updated_at.unwrap(),
-        completed_at: match &todo.completed_at {
-            Some(datetime) => Some(datetime.clone().into()),
-            None => None,
-        },
-        is_completed: todo.is_completed.to_owned().unwrap(),
-        is_deleted: todo.is_deleted.to_owned().unwrap(),
+        id: todo.id,
+        title: todo.title.clone().unwrap_or_default(),
+        contents: todo.contents.clone().unwrap_or_default(),
+        created_at: todo.created_at,  // UTC 시간 그대로 유지
+        updated_at: todo.updated_at,  // UTC 시간 그대로 유지
+        completed_at: todo.completed_at,  // UTC 시간 그대로 유지
+        is_completed: todo.is_completed.clone().unwrap_or_default(),
+        is_deleted: todo.is_deleted.clone().unwrap_or_default(),
     }
 }
 
