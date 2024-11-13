@@ -76,7 +76,10 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    println!("🚀 Server started successfully");
+    // println!("🚀 Server started successfully");
+    let set_url = env::var("SERVER_URL").unwrap();
+    let set_port = env::var("SERVER_PORT").unwrap();
+    println!("🚀 Server started successfully at http://{}:{}", set_url, set_port);
 
     HttpServer::new(move || {
         let cors = Cors::default()

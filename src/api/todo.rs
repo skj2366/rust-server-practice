@@ -6,45 +6,98 @@ use crate::models::todo::{TodoModel, TodoModelResponse};
 use crate::schemas::todo::{CreateTodoSchema, FilterOptions, UpdateTodoSchema};
 use crate::AppState;
 
+/// A simple health check endpoint that responds with a success message.
+///
+/// The endpoint is used to verify that the server is running and all services
+/// are operational. It returns a JSON object with a status and a message.
+///
+/// GET /healthchecker
+///
+/// # Example
+///
+/// ```sh
+/// $ curl -X GET http://localhost:8080/healthchecker
+/// ```
+///
+/// # Response
+///
+/// ```json
+/// {
+///     "status": "success",
+///     "message": "Rust, SQLX, MySQL, Actix Web todo is Good🏃‍♂️"
+/// }
+/// ```
 #[get("/healthchecker")]
 async fn health_checker_handler() -> impl Responder {
+    // Define a constant message to be returned in the response
     const MESSAGE: &str = "Rust, SQLX, MySQL, Actix Web todo is Good🏃‍♂️";
 
+    // Return an HTTP response with status 200 (OK) and a JSON body
     HttpResponse::Ok().json(json!({"status": "success","message": MESSAGE}))
 }
 
+/// Retrieves a paginated list of todo items.
+/// 
+/// GET /todos
+/// 
+/// # Query Parameters
+/// - `page`: Optional page number for pagination (default is 1).
+/// - `limit`: Optional number of items per page (default is 10).
+/// 
+/// # Response
+/// Returns a JSON response containing the status, number of results, and a list of todos.
+/// 
+/// # Example
+/// 
+/// $ curl -X GET "http://localhost:8080/todos?page=1&limit=10"
+/// 
+/// ```json
+/// {
+///     "status": "success",
+///     "results": 10,
+///     "todos": [
+///         // List of todo items
+///     ]
+/// }
+/// ```
 #[get("/todos")]
 pub async fn todo_list_handler(
-    opts: web::Query<FilterOptions>,
-    data: web::Data<AppState>,
+    opts: web::Query<FilterOptions>, // Query parameters for pagination
+    data: web::Data<AppState>, // Application state containing database connection pool
 ) -> impl Responder {
+    // Set default pagination values if not provided
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
+    // Fetch todos from the database with pagination
     let todos: Vec<TodoModel> = sqlx::query_as!(
         TodoModel,
         r#"SELECT * FROM todos ORDER by id desc LIMIT ? OFFSET ?"#,
         limit as i32,
         offset as i32
     )
-        .fetch_all(&data.db)
-        .await
-        .unwrap();
+    .fetch_all(&data.db)
+    .await
+    .unwrap();
 
+    // Transform database records into response-friendly format
     let todo_responses = todos
         .into_iter()
         .map(|todo| filter_db_record(&todo))
         .collect::<Vec<TodoModelResponse>>();
 
+    // Create JSON response
     let json_response = json!({
         "status": "success",
         "results": todo_responses.len(),
         "todos": todo_responses
     });
+
+    // Return HTTP response
     HttpResponse::Ok().json(json_response)
 }
 
-#[post("/todos/")]
+#[post("/todos")]
 async fn create_todo_handler(
     body: web::Json<CreateTodoSchema>,
     data: web::Data<AppState>,
